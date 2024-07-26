@@ -6,8 +6,13 @@ from transformers import AutoTokenizer
 from ..models.SingleBertEmbedder import SingleBertEmbedder
 from torch.utils.data import Dataset, DataLoader
 from torch.optim import Adam
-from torch.nn import TripletMarginLoss, Module
+from torch.nn import TripletMarginLoss, Module, CosineSimilarity
 import torch
+
+@dataclass
+class EmbedderRetrieverOutput():
+    mrr: float
+    accuracy: float
 
 @dataclass
 class EmbedderRetrieverTrainingArguments():
@@ -66,4 +71,21 @@ class BertEmbedderRetriever():
             self._epoch_fit(dataloader, optimizer, loss_fn, step_callback=args.step_callback)
             if epoch_callback is not None:
                 epoch_callback(epoch, self.model)
-            
+
+    def evaluate(self, queries: List[str], documents: List[str], batch_size:int = 8):
+        dataloader = self._init_dataloader(queries=queries, documents=documents, shuffle=False, batch_size=batch_size)
+        rr = []
+        accuracies = []
+        similarity = CosineSimilarity(dim=1)
+        for queries, documents in dataloader:
+            queries_embeddings = self._encode(queries)
+            documents_embeddings = self._encode(documents)
+            for i, query in enumerate(queries_embeddings):
+                scores = similarity(query, documents_embeddings)
+                sorted_scores, sorted_indices = torch.sort(scores, descending=True)
+                rank = (sorted_indices == i).nonzero().item()
+                rr.append(1/(rank+1))
+                accuracies.append(sorted_indices[0] == i)
+        mrr = sum(rr) / len(rr)
+        accuracy = sum(accuracies) / len(accuracies)
+        return EmbedderRetrieverOutput(mrr=mrr, accuracy=accuracy)
