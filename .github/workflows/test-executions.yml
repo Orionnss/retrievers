@@ -3,6 +3,8 @@ run-name: ${{ github.actor }} is testing functionalities 🚀
 on: [push]
 jobs:
   Continuous-Integration:
+    uses: py-actions/py-dependency-install@v4
+    with: ./requirements.txt
     runs-on: ubuntu-latest
     steps:
       - run: ls
