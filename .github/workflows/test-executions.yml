@@ -1,5 +1,5 @@
 name: Continuous Integration
-run-name: ${{ github.actor }} is testing functionalities 🚀
+run-name: Test Executions
 on: [push]
 jobs:
   Continuous-Integration:
