@@ -57,7 +57,7 @@ sympy==1.12
 tensordict==0.4.0
 threadpoolctl==3.2.0
 tokenizers==0.15.1
-torch==2.1.2
+torch>=2.1.2
 torchaudio==2.1.2
 torchmetrics==1.4.0.post0
 torchrl==0.4.0
