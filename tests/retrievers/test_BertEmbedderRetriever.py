@@ -18,7 +18,7 @@ def test_BertEmbedderRetriever_fit():
     losses = []
     loss_callback = lambda loss: losses.append(loss)
     args = EmbedderRetrieverTrainingArguments(batch_size=2, shuffle=False, epochs=1, step_callback=loss_callback)
-    retriever.fit(queries, documents, args, margin=0)
+    retriever.fit(queries, documents, args, margin=0.01)
     assert losses[0] > losses[1]
 
 def test_BertEmbedderRetriever_evaluate():
