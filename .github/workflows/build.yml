@@ -1,6 +1,9 @@
 name: Continuous Integration
 run-name: Test Executions
-on: [push]
+on:
+    push:
+        branches:
+            - main
 jobs:
   Building:
     runs-on: ubuntu-latest

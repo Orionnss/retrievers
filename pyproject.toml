@@ -5,8 +5,11 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "retrievers"
+name = "retriever-transformers"
 version = "0.0.1"
+
+[tool.poetry]
+readme = "README.md"
 
 dependencies = [
     "torch",
