@@ -9,4 +9,5 @@ def test_BertEmbedderRetriever_fit():
     loss_callback = lambda loss: losses.append(loss)
     args = CrossAttentionRetrieverTrainingArguments(batch_size=2, shuffle=False, epochs=1, step_callback=loss_callback)
     retriever.fit(queries, documents, args)
-    assert losses[0] > losses[1]
+    print(losses)
+    assert losses[0] > losses[-1]

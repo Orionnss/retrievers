@@ -32,9 +32,9 @@ class _CrossAttentionRetrieverDataset(Dataset):
 
     def __getitem__(self, idx):
         if idx % 2 == 0:
-            return self.queries[idx // 2], self.documents[idx // 2], torch.tensor(1)
+            return self.queries[idx // 2], self.documents[idx // 2], torch.tensor(1, dtype=torch.float)
         else:
-            return self.queries[idx // 2], self.documents[(idx // 2 - 1) % len(self.documents)], torch.tensor(0)
+            return self.queries[idx // 2], self.documents[(idx // 2 - 1) % len(self.documents)], torch.tensor(0, dtype=torch.float)
 
 class CrossAttentionRetriever():
     def __init__(self, bert_checkpoint):
@@ -47,7 +47,7 @@ class CrossAttentionRetriever():
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
     
     def _encode(self, texts: List[str]):
-        inputs = self.tokenizer(texts, return_tensors="pt", padding=True, truncation=True)
+        inputs = self.tokenizer(texts, return_tensors="pt", padding="max_length", max_length=512)
         return inputs
     
     def _epoch_fit(self, dataloader, optimizer, loss_fn, step_callback: Callable[[float], None] = None):
@@ -56,7 +56,10 @@ class CrossAttentionRetriever():
             query_embeddings = self._encode(queries)
             document_embeddings = self._encode(documents)
             logits = self.model(query_embeddings, document_embeddings)
-            loss = loss_fn(logits, labels)
+            print(logits.shape)
+            print(labels.shape)
+            print(logits)
+            loss = loss_fn(logits.squeeze(), labels)
             if step_callback is not None:
                 step_callback(loss)
             loss.backward()
