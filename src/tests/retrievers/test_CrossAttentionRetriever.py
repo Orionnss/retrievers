@@ -9,7 +9,7 @@ def test_CrossAttentionRetriever_fit():
     loss_callback = lambda loss: losses.append(loss)
     num_epochs = 2
     batch_size = 2
-    args = CrossAttentionRetrieverTrainingArguments(batch_size=batch_size, shuffle=False, epochs=num_epochs, step_callback=loss_callback, learning_rate=1e-7)
+    args = CrossAttentionRetrieverTrainingArguments(batch_size=batch_size, shuffle=False, epochs=num_epochs, step_callback=loss_callback, learning_rate=1e-10)
     retriever.fit(queries, documents, args)
     print(losses)
     print(losses[0], losses[-1])
