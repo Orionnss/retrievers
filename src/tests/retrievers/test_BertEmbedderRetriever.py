@@ -1,4 +1,4 @@
-from ...src.retriever_transformers.retrievers.BertEmbedderRetriever import BertEmbedderRetriever, EmbedderRetrieverTrainingArguments, EmbedderRetrieverOutput
+from ...retriever_transformers.retrievers.BertEmbedderRetriever import BertEmbedderRetriever, EmbedderRetrieverTrainingArguments, EmbedderRetrieverOutput
 
 retriever = BertEmbedderRetriever("bert-base-uncased")
 

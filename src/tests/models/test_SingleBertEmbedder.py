@@ -1,4 +1,4 @@
-from ...src.retriever_transformers.models.SingleBertEmbedder import SingleBertEmbedder
+from ...retriever_transformers.models.SingleBertEmbedder import SingleBertEmbedder
 from transformers import AutoTokenizer
 
 model = SingleBertEmbedder("bert-base-uncased")
