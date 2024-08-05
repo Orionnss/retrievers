@@ -1,4 +1,4 @@
-from ...src.retrievers.CrossAttentionRetriever import CrossAttentionRetriever, CrossAttentionRetrieverTrainingArguments, CrossAttentionRetrieverOutput
+from ...src.retriever_transformers.retrievers.CrossAttentionRetriever import CrossAttentionRetriever, CrossAttentionRetrieverTrainingArguments, CrossAttentionRetrieverOutput
 
 retriever = CrossAttentionRetriever("bert-base-uncased")
 

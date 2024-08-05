@@ -1,4 +1,4 @@
-from ...src.models.CrossAttentionDistancePredictor import CrossAttentionDistancePredictor
+from ...src.retriever_transformers.models.CrossAttentionDistancePredictor import CrossAttentionDistancePredictor
 from transformers import AutoTokenizer
 import torch
 
