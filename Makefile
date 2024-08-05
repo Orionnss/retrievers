@@ -6,4 +6,4 @@ build:
 	python -m build
 
 install:
-	pip install -e .
+	pip install .
