@@ -5,7 +5,7 @@ build:
 	pip-compile pyproject.toml --extra=dev
 	python -m build
 
-run-test:
+run-tests:
 	python -m pytest src/tests
 
 install:
