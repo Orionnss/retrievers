@@ -12,6 +12,6 @@ dependencies = [
     "transformers",
     'numpy',
 ]
-
+readme = "README.rst"
 [project.optional-dependencies]
 dev = ["pip-tools", "pytest"]
