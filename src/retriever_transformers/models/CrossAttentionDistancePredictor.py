@@ -4,8 +4,10 @@ from transformers.models.bert import BertModel
 import torch
 
 class CrossAttentionDistancePredictor(Module):
-    def __init__(self, bert_checkpoint):
+    def __init__(self, bert_checkpoint, seed=None):
         super().__init__()
+        if seed is not None:
+            torch.manual_seed(seed)
         self.query_model = AutoModel.from_pretrained(bert_checkpoint)
         self.answer_model = AutoModel.from_pretrained(bert_checkpoint)
         self.cross_attention = MultiheadAttention(embed_dim=768, num_heads=8)

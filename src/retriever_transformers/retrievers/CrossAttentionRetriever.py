@@ -37,9 +37,9 @@ class _CrossAttentionRetrieverDataset(Dataset):
             return self.queries[idx // 2], self.documents[(idx // 2 - 1) % len(self.documents)], torch.tensor(0, dtype=torch.float)
 
 class CrossAttentionRetriever():
-    def __init__(self, bert_checkpoint):
+    def __init__(self, bert_checkpoint, seed=None):
         self.bert_checkpoint = bert_checkpoint
-        self.model = CrossAttentionDistancePredictor(bert_checkpoint)
+        self.model = CrossAttentionDistancePredictor(bert_checkpoint, seed=seed)
         self.tokenizer = AutoTokenizer.from_pretrained(bert_checkpoint)
     
     def _init_dataloader(self, queries: List[str], documents: List[str], batch_size: int = 8, shuffle: bool = False):
@@ -52,23 +52,21 @@ class CrossAttentionRetriever():
     
     def _epoch_fit(self, dataloader, optimizer, loss_fn, step_callback: Callable[[float], None] = None):
         for queries, documents, labels in dataloader:
-            optimizer.zero_grad()
             query_embeddings = self._encode(queries)
             document_embeddings = self._encode(documents)
+            optimizer.zero_grad()
             logits = self.model(query_embeddings, document_embeddings)
-            print(logits.shape)
-            print(labels.shape)
-            print(logits)
             loss = loss_fn(logits.squeeze(), labels)
-            if step_callback is not None:
-                step_callback(loss)
             loss.backward()
             optimizer.step()
+            if step_callback is not None:
+                step_callback(loss)
 
     def fit(self, queries: List[str], documents: List[str], args: CrossAttentionRetrieverTrainingArguments, epoch_callback: Callable[[int, Module], None] = None) -> Module:
+        self.model.train(True)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=args.learning_rate)
         loss_fn = torch.nn.CrossEntropyLoss()
-        dataloader = self._init_dataloader(queries, documents, batch_size=args.batch_size, shuffle=True)
+        dataloader = self._init_dataloader(queries, documents, batch_size=args.batch_size * 2, shuffle=args.shuffle)
         for epoch in range(args.epochs):
             self._epoch_fit(dataloader, optimizer, loss_fn, step_callback=args.step_callback)
             if epoch_callback is not None:
