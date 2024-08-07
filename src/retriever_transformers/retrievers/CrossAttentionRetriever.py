@@ -47,7 +47,7 @@ class CrossAttentionRetriever():
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
     
     def _encode(self, texts: List[str]):
-        inputs = self.tokenizer(texts, return_tensors="pt", padding="max_length", max_length=512)
+        inputs = self.tokenizer(texts, return_tensors="pt", padding=True)
         return inputs
     
     def _epoch_fit(self, dataloader, optimizer, loss_fn, step_callback: Callable[[float], None] = None):
@@ -65,7 +65,7 @@ class CrossAttentionRetriever():
     def fit(self, queries: List[str], documents: List[str], args: CrossAttentionRetrieverTrainingArguments, epoch_callback: Callable[[int, Module], None] = None) -> Module:
         self.model.train(True)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=args.learning_rate)
-        loss_fn = torch.nn.CrossEntropyLoss()
+        loss_fn = torch.nn.BCELoss()
         dataloader = self._init_dataloader(queries, documents, batch_size=args.batch_size * 2, shuffle=args.shuffle)
         for epoch in range(args.epochs):
             self._epoch_fit(dataloader, optimizer, loss_fn, step_callback=args.step_callback)
