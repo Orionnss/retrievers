@@ -11,9 +11,7 @@ class CrossAttentionDistancePredictor(Module):
             torch.manual_seed(seed)
         self.query_model: BertModel = AutoModel.from_pretrained(bert_checkpoint)
         self.answer_model: BertModel = AutoModel.from_pretrained(bert_checkpoint)
-        # self.cross_attention = MultiheadAttention(embed_dim=768, num_heads=8)
         self.cross_attention = TransformerDecoderLayer(768, 8, batch_first=True)
-        # sequence_length = 512
         self.linear = Linear(768, 1024)
         self.relu = ReLU()
         self.linear2 = Linear(1024, 1)
@@ -23,15 +21,12 @@ class CrossAttentionDistancePredictor(Module):
 
     def forward(self, query_batch: BatchEncoding, answer_batch: BatchEncoding):
         query_output: BaseModelOutputWithPoolingAndCrossAttentions = self.query_model(**query_batch,
-                                                                                      # output_hidden_states=True,
                                                                                       return_dict=True)
         answer_output: BaseModelOutputWithPoolingAndCrossAttentions = self.answer_model(**answer_batch,
-                                                                                        # output_hidden_states=True,
                                                                                         return_dict=True)
         answer_embeddings = self.cross_attention(answer_output.last_hidden_state, query_output.last_hidden_state, 
                                                  tgt_is_causal=False,
                                                  memory_is_causal=False)
-
         final_token_embedding = answer_embeddings[:,0]
         out = self.linear(final_token_embedding)
         out = self.relu(out)
