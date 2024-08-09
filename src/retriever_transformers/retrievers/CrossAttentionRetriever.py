@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader, Dataset
 from torch.nn import Module
 from dataclasses import dataclass
 from typing import Callable
+from tqdm import tqdm
 
 import torch
 
@@ -50,7 +51,10 @@ class CrossAttentionRetriever():
         inputs = self.tokenizer(texts, return_tensors="pt", padding=True)
         return inputs
     
-    def _epoch_fit(self, dataloader, optimizer, loss_fn, step_callback: Callable[[float], None] = None):
+    def _epoch_fit(self, dataloader, optimizer, loss_fn, step_callback: Callable[[float], None] = None, progress_bar=False):
+        step = 0
+        if progress_bar:
+            dataloader = tqdm(dataloader, desc=f"Step {step}/{len(dataloader)}")
         for queries, documents, labels in dataloader:
             query_embeddings = self._encode(queries)
             document_embeddings = self._encode(documents)
@@ -61,14 +65,18 @@ class CrossAttentionRetriever():
             optimizer.step()
             if step_callback is not None:
                 step_callback(loss)
+            step += 1
 
-    def fit(self, queries: List[str], documents: List[str], args: CrossAttentionRetrieverTrainingArguments, epoch_callback: Callable[[int, Module], None] = None) -> Module:
+    def fit(self, queries: List[str], documents: List[str], args: CrossAttentionRetrieverTrainingArguments, epoch_callback: Callable[[int, Module], None] = None, progress_bar=False) -> Module:
         self.model.train(True)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=args.learning_rate)
         loss_fn = torch.nn.BCELoss()
         dataloader = self._init_dataloader(queries, documents, batch_size=args.batch_size * 2, shuffle=args.shuffle)
+        epoch = 0
+        if progress_bar:
+            dataloader = tqdm(dataloader, desc=f"Epoch {epoch}/{args.epochs}")
         for epoch in range(args.epochs):
-            self._epoch_fit(dataloader, optimizer, loss_fn, step_callback=args.step_callback)
+            self._epoch_fit(dataloader, optimizer, loss_fn, step_callback=args.step_callback, progress_bar=progress_bar)
             if epoch_callback is not None:
                 epoch_callback(epoch, self.model)
         return self.model

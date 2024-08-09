@@ -1,11 +1,10 @@
 name: Publish Python 🐍 distribution 📦 to PyPI and TestPyPI
-
+run-name: Build and Publish 📦
 on:
   push:
     branches:
       - main
       - dev
-
 jobs:
   build:
     name: Build distribution 📦
