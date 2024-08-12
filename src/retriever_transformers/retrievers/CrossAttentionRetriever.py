@@ -1,14 +1,27 @@
 from typing import List
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, BatchEncoding
 from torch.utils.data import DataLoader, Dataset
 from torch.nn import Module
 from dataclasses import dataclass
 from typing import Callable
+
 from tqdm import tqdm
+
+import numpy as np
 
 import torch
 
 from ..models.CrossAttentionDistancePredictor import CrossAttentionDistancePredictor
+
+class _BatchableDocuments(Dataset):
+    def __init__(self, documents: BatchEncoding) -> None:
+        self.documents = documents
+    
+    def __len__(self):
+        return len(self.documents)
+    
+    def __getitem__(self, idx):
+        return self.documents[idx]
 
 @dataclass
 class CrossAttentionRetrieverTrainingArguments():
@@ -22,6 +35,17 @@ class CrossAttentionRetrieverTrainingArguments():
 class CrossAttentionRetrieverOutput():
     mrr: float
     accuracy: float
+
+class _StandardMRRAndAccuracyEvaluatorDataset():
+    def __init__(self, queries: List[str], documents: List[str]) -> None:
+        self.queries = queries
+        self.documents = documents
+    
+    def __len__(self):
+        return len(self.queries)
+    
+    def __getitem__(self, idx):
+        return self.queries[idx], self.documents[idx]
 
 class _CrossAttentionRetrieverDataset(Dataset):
     def __init__(self, queries: List[str], documents: List[str]):
@@ -50,6 +74,38 @@ class CrossAttentionRetriever():
     def _encode(self, texts: List[str]):
         inputs = self.tokenizer(texts, return_tensors="pt", padding=True)
         return inputs
+    
+    def rank(self, queries: List[str], documents: List[str], batch_size: int = 16) -> CrossAttentionRetrieverOutput:
+        self.model.eval()
+        ranks = []
+        for query in queries:
+            ranks.append([])
+            query = self._encode(query)
+            documents_datasets = _BatchableDocuments(documents)
+            documents_dataloader = DataLoader(documents_datasets, batch_size=min(batch_size, len(documents_datasets)))
+            for batch in documents_dataloader:
+                documents_tokenized = self._encode(batch)
+                distances = self.model(query, documents_tokenized, rank_for_one_query=True)
+                ranks[-1].extend(distances)            
+        return ranks
+    
+    def compute_mrr_and_accuracy(self, ranks: List[List[float]]) -> CrossAttentionRetrieverOutput:
+        mrr = []
+        accuracy = []
+        for i, ranking in enumerate(ranks):
+            best = np.argmax(ranking)
+            sorted_ranking = np.flip(np.argsort(ranking))
+            print(sorted_ranking)
+            if best == i:
+                accuracy.append(1)
+            else:
+                accuracy.append(0)
+            print(np.where(sorted_ranking == i))
+            mrr.append(1 / (np.where(sorted_ranking == i)[0] + 1))
+        print(mrr)
+        mrr = np.mean(mrr)
+        accuracy = np.mean(accuracy)
+        return CrossAttentionRetrieverOutput(mrr, accuracy)
     
     def _epoch_fit(self, dataloader, optimizer, loss_fn, step_callback: Callable[[float], None] = None, progress_bar=False):
         step = 0

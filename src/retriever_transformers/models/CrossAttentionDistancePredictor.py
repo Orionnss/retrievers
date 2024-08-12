@@ -19,12 +19,18 @@ class CrossAttentionDistancePredictor(Module):
 
 
 
-    def forward(self, query_batch: BatchEncoding, answer_batch: BatchEncoding):
+    def forward(self, query_batch: BatchEncoding, answer_batch: BatchEncoding, rank_for_one_query=False):
+            
         query_output: BaseModelOutputWithPoolingAndCrossAttentions = self.query_model(**query_batch,
                                                                                       return_dict=True)
         answer_output: BaseModelOutputWithPoolingAndCrossAttentions = self.answer_model(**answer_batch,
                                                                                         return_dict=True)
-        answer_embeddings = self.cross_attention(answer_output.last_hidden_state, query_output.last_hidden_state, 
+        if rank_for_one_query:
+            batch_size = answer_output.last_hidden_state.shape[0]
+            query_hidden_state = query_output.last_hidden_state.squeeze().repeat(batch_size, 1, 1)
+        else:
+            query_hidden_state = query_output.last_hidden_state
+        answer_embeddings = self.cross_attention(answer_output.last_hidden_state, query_hidden_state, 
                                                  tgt_is_causal=False,
                                                  memory_is_causal=False)
         final_token_embedding = answer_embeddings[:,0]

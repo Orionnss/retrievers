@@ -22,3 +22,13 @@ def test_SimpleDistancePrediction_multiple():
     assert outputs[0] > 0 and outputs[0] < 1
     assert outputs[1] > 0 and outputs[1] < 1
     assert outputs[0] != outputs[1]
+
+def test_rank_for_one_query():
+    inputs_questions = tokenizer(["Hello, my dog is cute"], return_tensors="pt", padding="max_length", max_length=512)
+    inputs_answers = tokenizer(["Hello, my cat is cute", "Hello, my dog is cute"], return_tensors="pt", padding="max_length", max_length=512)
+    outputs = model(inputs_questions, inputs_answers, rank_for_one_query=True)
+    assert outputs is not None
+    assert outputs.shape == torch.Size([2])
+    assert outputs[0] > 0 and outputs[0] < 1
+    assert outputs[1] > 0 and outputs[1] < 1
+    assert outputs[0] != outputs[1]
