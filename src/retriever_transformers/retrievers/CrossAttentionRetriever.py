@@ -30,6 +30,7 @@ class CrossAttentionRetrieverTrainingArguments():
     epochs: int = 1
     learning_rate: float = 1e-5
     step_callback: Callable[[float], None] = None
+    freeze_llms: bool = False
 
 @dataclass
 class CrossAttentionRetrieverOutput():
@@ -122,6 +123,11 @@ class CrossAttentionRetriever():
 
     def fit(self, queries: List[str], documents: List[str], args: CrossAttentionRetrieverTrainingArguments, epoch_callback: Callable[[int, Module], None] = None, progress_bar=False) -> Module:
         self.model.train(True)
+        if args.freeze_llms:
+            for param in self.model.query_model.parameters():
+                param.requires_grad = False
+            for param in self.model.answer_model.parameters():
+                param.requires_grad = False
         optimizer = torch.optim.Adam(self.model.parameters(), lr=args.learning_rate)
         loss_fn = torch.nn.BCELoss()
         dataloader = self._init_dataloader(queries, documents, batch_size=args.batch_size * 2, shuffle=args.shuffle)

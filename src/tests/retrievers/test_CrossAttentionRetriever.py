@@ -41,3 +41,19 @@ def test_CrossAttentionRetriever_compute_mrr_and_accuracy():
     assert output.mrr == 1.0
     assert output.accuracy == 1.0
 
+def extract_parameters_from_model(model):
+    return [param for param in model.parameters()]
+
+def test_llm_freezing():
+    queries = ["Words to trigger damages", "The sea is blue"]
+    documents = ["Words to trigger damages ", "The sea is blue"]
+    losses = []
+    loss_callback = lambda loss: losses.append(loss)
+    num_epochs = 2
+    batch_size = 2
+    args = CrossAttentionRetrieverTrainingArguments(batch_size=batch_size, shuffle=False, epochs=num_epochs, step_callback=loss_callback, learning_rate=1e-5, freeze_llms=True)
+    init_llms_params = extract_parameters_from_model(retriever.model.query_model)
+    retriever.fit(queries, documents, args)
+    final_llms_params = extract_parameters_from_model(retriever.model.query_model)
+    assert init_llms_params == final_llms_params
+    assert losses[0] > losses[-1]
