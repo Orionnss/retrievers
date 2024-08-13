@@ -72,7 +72,7 @@ class CrossAttentionRetriever():
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
     
     def _encode(self, texts: List[str]):
-        inputs = self.tokenizer(texts, return_tensors="pt", padding=True)
+        inputs = self.tokenizer(texts, return_tensors="pt", padding=True, truncation=True)
         return inputs
     
     def rank(self, queries: List[str], documents: List[str], batch_size: int = 16) -> CrossAttentionRetrieverOutput:
@@ -86,7 +86,7 @@ class CrossAttentionRetriever():
             for batch in documents_dataloader:
                 documents_tokenized = self._encode(batch)
                 distances = self.model(query, documents_tokenized, rank_for_one_query=True)
-                ranks[-1].extend(distances)            
+                ranks[-1].extend(distances.detach().numpy())            
         return ranks
     
     def compute_mrr_and_accuracy(self, ranks: List[List[float]]) -> CrossAttentionRetrieverOutput:
@@ -95,14 +95,11 @@ class CrossAttentionRetriever():
         for i, ranking in enumerate(ranks):
             best = np.argmax(ranking)
             sorted_ranking = np.flip(np.argsort(ranking))
-            print(sorted_ranking)
             if best == i:
                 accuracy.append(1)
             else:
                 accuracy.append(0)
-            print(np.where(sorted_ranking == i))
             mrr.append(1 / (np.where(sorted_ranking == i)[0] + 1))
-        print(mrr)
         mrr = np.mean(mrr)
         accuracy = np.mean(accuracy)
         return CrossAttentionRetrieverOutput(mrr, accuracy)
