@@ -93,7 +93,7 @@ class CrossAttentionRetriever():
             for batch in documents_dataloader:
                 documents_tokenized = self._encode(batch)
                 distances = self.model(query, documents_tokenized, rank_for_one_query=True)
-                ranks[-1].extend(distances.detach().numpy())            
+                ranks[-1].extend(distances.detach().cpu().numpy())            
         return ranks
     
     def compute_mrr_and_accuracy(self, ranks: List[List[float]]) -> CrossAttentionRetrieverOutput:
@@ -116,9 +116,9 @@ class CrossAttentionRetriever():
         if progress_bar:
             dataloader = tqdm(dataloader, desc=f"Step {step}/{len(dataloader)}")
         for queries, documents, labels in dataloader:
+            optimizer.zero_grad()
             query_embeddings = self._encode(queries)
             document_embeddings = self._encode(documents)
-            optimizer.zero_grad()
             labels = labels.to(self.device)
             logits = self.model(query_embeddings, document_embeddings)
             loss = loss_fn(logits.squeeze(), labels)
