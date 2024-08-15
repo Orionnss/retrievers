@@ -23,6 +23,10 @@ class TransformerDecoderLayerWithAttentionWeights(TransformerDecoderLayer):
             self.callback(weights)
         x = output
         return self.dropout2(x)
+    
+    @property
+    def device(self):
+        return self.multihead_attn.in_proj_weight.device
 
 
 class CrossAttentionDistancePredictor(Module):
@@ -31,7 +35,9 @@ class CrossAttentionDistancePredictor(Module):
         if seed is not None:
             torch.manual_seed(seed)
         self.query_model: BertModel = AutoModel.from_pretrained(bert_checkpoint)
+        print(isinstance(self.query_model, Module), self.query_model.device)
         self.answer_model: BertModel = AutoModel.from_pretrained(bert_checkpoint)
+        print(isinstance(self.answer_model, Module), self.answer_model.device)
         self.cross_attention = TransformerDecoderLayerWithAttentionWeights(768, 8, batch_first=True)
         if attention_weights_callback is not None:
             self.cross_attention.set_callback_for_attention_weights(attention_weights_callback)
