@@ -28,7 +28,6 @@ jobs:
       with:
         name: python-package-distributions
         path: dist/
-
   publish-to-pypi:
     name: >-
       Publish Python 🐍 distribution 📦 to PyPI
