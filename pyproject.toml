@@ -6,12 +6,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "retriever_transformers"
-version = "0.0.8"
+version = "0.0.9"
 dependencies = [
     "torch",
     "transformers",
     'numpy',
     'tqdm',
+    'matplotlib'
 ]
 readme = "README.rst"
 [project.optional-dependencies]
