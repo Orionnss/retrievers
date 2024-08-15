@@ -4,7 +4,6 @@ from torch.utils.data import DataLoader, Dataset
 from torch.nn import Module
 from dataclasses import dataclass
 from typing import Callable
-from rank_bm25 import BM25Okapi
 
 from tqdm import tqdm
 
