@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "retriever_transformers"
-version = "0.0.9"
+version = "0.1.0"
 dependencies = [
     "torch",
     "transformers",

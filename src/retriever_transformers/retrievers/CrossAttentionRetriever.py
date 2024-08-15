@@ -63,10 +63,12 @@ class _CrossAttentionRetrieverDataset(Dataset):
             return self.queries[idx // 2], self.documents[(idx // 2 - 1) % len(self.documents)], torch.tensor(0, dtype=torch.float)
 
 class CrossAttentionRetriever():
-    def __init__(self, bert_checkpoint, seed=None):
+    def __init__(self, bert_checkpoint, seed=None, device=None):
         self.bert_checkpoint = bert_checkpoint
         self.model = CrossAttentionDistancePredictor(bert_checkpoint, seed=seed)
         self.tokenizer = AutoTokenizer.from_pretrained(bert_checkpoint)
+        self.device = device
+        self.model.to(device)
     
     def _init_dataloader(self, queries: List[str], documents: List[str], batch_size: int = 8, shuffle: bool = False):
         dataset = _CrossAttentionRetrieverDataset(queries, documents)
@@ -74,6 +76,8 @@ class CrossAttentionRetriever():
     
     def _encode(self, texts: List[str]):
         inputs = self.tokenizer(texts, return_tensors="pt", padding=True, truncation=True)
+        if self.device is not None:
+            inputs.to(self.device)
         return inputs
     
     def rank(self, queries: List[str], documents: List[str], batch_size: int = 16, progress_bar=False) -> CrossAttentionRetrieverOutput:
@@ -131,7 +135,8 @@ class CrossAttentionRetriever():
             for param in self.model.answer_model.parameters():
                 param.requires_grad = False
         optimizer = torch.optim.Adam(self.model.parameters(), lr=args.learning_rate)
-        loss_fn = torch.nn.BCELoss()
+        loss_fn = torch.nn.BCELoss().to(self.device)
+
         dataloader = self._init_dataloader(queries, documents, batch_size=args.batch_size * 2, shuffle=args.shuffle)
         epoch = 0
         if progress_bar:
