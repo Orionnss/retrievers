@@ -119,6 +119,7 @@ class CrossAttentionRetriever():
             query_embeddings = self._encode(queries)
             document_embeddings = self._encode(documents)
             optimizer.zero_grad()
+            labels = labels.to(self.device)
             logits = self.model(query_embeddings, document_embeddings)
             loss = loss_fn(logits.squeeze(), labels)
             loss.backward()
