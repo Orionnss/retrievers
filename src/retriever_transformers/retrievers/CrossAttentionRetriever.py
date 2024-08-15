@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader, Dataset
 from torch.nn import Module
 from dataclasses import dataclass
 from typing import Callable
+from rank_bm25 import BM25Okapi
 
 from tqdm import tqdm
 
@@ -76,9 +77,11 @@ class CrossAttentionRetriever():
         inputs = self.tokenizer(texts, return_tensors="pt", padding=True, truncation=True)
         return inputs
     
-    def rank(self, queries: List[str], documents: List[str], batch_size: int = 16) -> CrossAttentionRetrieverOutput:
+    def rank(self, queries: List[str], documents: List[str], batch_size: int = 16, progress_bar=False) -> CrossAttentionRetrieverOutput:
         self.model.eval()
         ranks = []
+        if progress_bar:
+            queries = tqdm(queries, desc="Ranking")
         for query in queries:
             ranks.append([])
             query = self._encode(query)
