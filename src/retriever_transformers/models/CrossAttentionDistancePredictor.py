@@ -3,10 +3,8 @@ from transformers import BatchEncoding, AutoModel
 from transformers.models.bert import BertModel
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 from typing import Optional, Callable
-
 from torch import Tensor
 import torch
-
 
 class TransformerDecoderLayerWithAttentionWeights(TransformerDecoderLayer):
     def set_callback_for_attention_weights(self, callback: Callable[[Tensor], None]):
@@ -30,20 +28,18 @@ class TransformerDecoderLayerWithAttentionWeights(TransformerDecoderLayer):
 
 
 class CrossAttentionDistancePredictor(Module):
-    def __init__(self, bert_checkpoint, seed=None, attention_weights_callback: Optional[Callable[[Tensor], None]] = None):
+    def __init__(self, bert_checkpoint, seed=None, attention_weights_callback: Optional[Callable[[Tensor], None]] = None, nhead=8, nhidden=1024):
         super().__init__()
         if seed is not None:
             torch.manual_seed(seed)
         self.query_model: BertModel = AutoModel.from_pretrained(bert_checkpoint)
-        print(isinstance(self.query_model, Module), self.query_model.device)
         self.answer_model: BertModel = AutoModel.from_pretrained(bert_checkpoint)
-        print(isinstance(self.answer_model, Module), self.answer_model.device)
-        self.cross_attention = TransformerDecoderLayerWithAttentionWeights(768, 8, batch_first=True)
+        self.cross_attention = TransformerDecoderLayerWithAttentionWeights(768, nhead, batch_first=True)
         if attention_weights_callback is not None:
             self.cross_attention.set_callback_for_attention_weights(attention_weights_callback)
-        self.linear = Linear(768, 1024)
+        self.linear = Linear(768, nhidden)
         self.relu = ReLU()
-        self.linear2 = Linear(1024, 1)
+        self.linear2 = Linear(nhidden, 1)
         self.sigmoid = Sigmoid()
 
 
