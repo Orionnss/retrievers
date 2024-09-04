@@ -128,6 +128,12 @@ class CrossAttentionRetriever():
                 step_callback(loss)
             step += 1
 
+    def save_model(self, path: str):
+        torch.save(self.model.state_dict(), path)
+
+    def load_model(self, path: str):
+        self.model.load_state_dict(torch.load(path, weights_only=False))
+
     def fit(self, queries: List[str], documents: List[str], args: CrossAttentionRetrieverTrainingArguments, epoch_callback: Callable[[int, Module], None] = None, progress_bar=False) -> Module:
         self.model.train(True)
         if args.freeze_llms:
