@@ -4,3 +4,4 @@
 dist/
 build/
 *.png
+test_model

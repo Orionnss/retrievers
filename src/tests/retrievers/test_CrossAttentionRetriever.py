@@ -80,3 +80,4 @@ def test_save_and_load_model_and_distance_prediction_after_training_are_equal():
     retriever.load_model("test_model")
     ranks_after_loading = retriever.rank(queries, documents)
     assert ranks_before_saving == ranks_after_loading
+    
