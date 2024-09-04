@@ -2,7 +2,7 @@ from torch.nn import Module, MultiheadAttention, Linear, Sigmoid, ReLU, Transfor
 from transformers import BatchEncoding, AutoModel
 from transformers.models.bert import BertModel
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
-from typing import Optional, Callable
+from typing import Optional, Callable, final
 from torch import Tensor
 import torch
 
@@ -28,7 +28,7 @@ class TransformerDecoderLayerWithAttentionWeights(TransformerDecoderLayer):
 
 
 class CrossAttentionDistancePredictor(Module):
-    def __init__(self, bert_checkpoint, seed=None, attention_weights_callback: Optional[Callable[[Tensor], None]] = None, nhead=8, nhidden=1024):
+    def __init__(self, bert_checkpoint, seed=None, attention_weights_callback: Optional[Callable[[Tensor], None]] = None, nhead=8, hidden_size=1024, nhidden=1):
         super().__init__()
         if seed is not None:
             torch.manual_seed(seed)
@@ -37,9 +37,14 @@ class CrossAttentionDistancePredictor(Module):
         self.cross_attention = TransformerDecoderLayerWithAttentionWeights(768, nhead, batch_first=True)
         if attention_weights_callback is not None:
             self.cross_attention.set_callback_for_attention_weights(attention_weights_callback)
-        self.linear = Linear(768, nhidden)
+        self.linears = []
+        for i in range(nhidden):
+            if i == 0:
+                self.linears.append(Linear(768, hidden_size))
+            else:
+                self.linears.append(Linear(hidden_size, hidden_size))
         self.relu = ReLU()
-        self.linear2 = Linear(nhidden, 1)
+        self.linear2 = Linear(hidden_size, 1)
         self.sigmoid = Sigmoid()
 
 
@@ -59,8 +64,10 @@ class CrossAttentionDistancePredictor(Module):
                                                  tgt_is_causal=False,
                                                  memory_is_causal=False)
         final_token_embedding = answer_embeddings[:,0]
-        out = self.linear(final_token_embedding)
-        out = self.relu(out)
+        out = final_token_embedding
+        for layer in self.linears:
+            out = layer(out)
+            out = self.relu(out)
         out = self.linear2(out)
         out = self.sigmoid(out)
         out = out.squeeze(1)
