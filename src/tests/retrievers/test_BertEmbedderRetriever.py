@@ -29,3 +29,14 @@ def test_BertEmbedderRetriever_evaluate():
     assert type(metrics) == EmbedderRetrieverOutput
     assert metrics.mrr >= 0 and metrics.mrr <= 1
     assert metrics.accuracy >= 0 and metrics.accuracy <= 1
+
+def tets_BertEmbedderRetriever_rank():
+    queries = ["Hello, my dog is cute", "Hello, my cat is cute", "Dinosaurs are very old animals", "I like to eat pizza", "I like to eat pasta", "I like to eat sushi", "I like to eat burgers", "I like to eat hot dogs", "I like to eat"]
+    documents = ["Dogs are the best animals ", "Cats are usually ferocious and independent", "Dinosaurs are extinct", "Pizza is a very popular dish", "Pasta is a very popular dish", "Sushi is a very popular dish", "Burgers are a very popular dish", "Hot dogs are a very popular dish", "I like to eat"]
+    ranks = retriever.rank(queries, documents)
+    assert ranks is not None
+    assert type(ranks) == list
+    assert len(ranks) == len(queries)
+    assert type(ranks[0]) == list
+    assert len(ranks[0]) == len(documents)
+    
