@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader, Dataset
 from torch.nn import Module
 from dataclasses import dataclass
 from typing import Callable
+from .retriever import TrainableRetriever, RetrieverTrainingArguments
 
 from tqdm import tqdm
 
@@ -24,7 +25,7 @@ class _BatchableDocuments(Dataset):
         return self.documents[idx]
 
 @dataclass
-class CrossAttentionRetrieverTrainingArguments():
+class CrossAttentionRetrieverTrainingArguments(RetrieverTrainingArguments):
     batch_size: int = 8
     shuffle: bool = False
     epochs: int = 1
@@ -36,17 +37,6 @@ class CrossAttentionRetrieverTrainingArguments():
 class CrossAttentionRetrieverOutput():
     mrr: float
     accuracy: float
-
-class _StandardMRRAndAccuracyEvaluatorDataset():
-    def __init__(self, queries: List[str], documents: List[str]) -> None:
-        self.queries = queries
-        self.documents = documents
-    
-    def __len__(self):
-        return len(self.queries)
-    
-    def __getitem__(self, idx):
-        return self.queries[idx], self.documents[idx]
 
 class _CrossAttentionRetrieverDataset(Dataset):
     def __init__(self, queries: List[str], documents: List[str]):
@@ -62,11 +52,12 @@ class _CrossAttentionRetrieverDataset(Dataset):
         else:
             return self.queries[idx // 2], self.documents[(idx // 2 - 1) % len(self.documents)], torch.tensor(0, dtype=torch.float)
 
-class CrossAttentionRetriever():
-    def __init__(self, bert_checkpoint, seed=None, device=None):
+class CrossAttentionRetriever(TrainableRetriever):
+    def __init__(self, bert_checkpoint, seed=None, device=None, inference_batch_size=8):
         self.bert_checkpoint = bert_checkpoint
         self.model = CrossAttentionDistancePredictor(bert_checkpoint, seed=seed)
         self.tokenizer = AutoTokenizer.from_pretrained(bert_checkpoint)
+        self.inference_batch_size = inference_batch_size
         self.device = device
         self.model.to(device)
     
@@ -80,7 +71,7 @@ class CrossAttentionRetriever():
             inputs.to(self.device)
         return inputs
     
-    def rank(self, queries: List[str], documents: List[str], batch_size: int = 16, progress_bar=False) -> CrossAttentionRetrieverOutput:
+    def rank(self, queries: List[str], documents: List[str], progress_bar=False) -> CrossAttentionRetrieverOutput:
         self.model.eval()
         ranks = []
         if progress_bar:
@@ -89,7 +80,7 @@ class CrossAttentionRetriever():
             ranks.append([])
             query = self._encode(query)
             documents_datasets = _BatchableDocuments(documents)
-            documents_dataloader = DataLoader(documents_datasets, batch_size=min(batch_size, len(documents_datasets)))
+            documents_dataloader = DataLoader(documents_datasets, batch_size=min(self.inference_batch_size, len(documents_datasets)))
             for batch in documents_dataloader:
                 documents_tokenized = self._encode(batch)
                 distances = self.model(query, documents_tokenized, rank_for_one_query=True)
