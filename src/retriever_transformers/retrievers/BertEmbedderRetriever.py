@@ -10,8 +10,9 @@ from torch.optim import Adam
 from torch.nn import TripletMarginLoss, Module, CosineSimilarity
 from tqdm import tqdm
 import torch
+from torch import Tensor
 
-from .retriever import Retriever
+from .retriever import TrainableRetriever, RetrieverTrainingArguments
 
 @dataclass
 class EmbedderRetrieverOutput():
@@ -19,7 +20,7 @@ class EmbedderRetrieverOutput():
     accuracy: float
 
 @dataclass
-class EmbedderRetrieverTrainingArguments():
+class EmbedderRetrieverTrainingArguments(RetrieverTrainingArguments):
     batch_size: int = 8
     shuffle: bool = False
     epochs: int = 1
@@ -38,7 +39,7 @@ class _EmbedderRetrieverDataset(Dataset):
     def __getitem__(self, idx):
         return self.queries[idx], self.documents[idx]
     
-class BertEmbedderRetriever(Retriever):
+class BertEmbedderRetriever(TrainableRetriever):
     def __init__(self, bert_checkpoint):
         super().__init__()
         self.model = SingleBertEmbedder(bert_checkpoint)
@@ -96,14 +97,13 @@ class BertEmbedderRetriever(Retriever):
 
     def rank(self, queries: List[str], documents: List[str], progress_bar: bool = False):
         self.model.eval()
-        ranks = []
+        ranks = torch.empty((100, 100))
         similarity = CosineSimilarity(dim=1)
         if progress_bar:
             queries = tqdm(queries, desc="Ranking")
         queries_embeddings = self._encode(queries)
         documents_embeddings = self._encode(documents)
-        for query in queries_embeddings:
-            ranks.append([])
+        for i, query in enumerate(queries_embeddings):
             scores = similarity(query, documents_embeddings)
-            ranks[-1].append(scores.item())
+            ranks[i] = scores.detach()
         return ranks
