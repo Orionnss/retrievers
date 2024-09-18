@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader, Dataset
 from torch.nn import Module
 from dataclasses import dataclass
 from typing import Callable
-from .retriever import Retriever
+from .retriever import TrainableRetriever, RetrieverTrainingArguments
 
 from tqdm import tqdm
 
@@ -25,7 +25,7 @@ class _BatchableDocuments(Dataset):
         return self.documents[idx]
 
 @dataclass
-class CrossAttentionRetrieverTrainingArguments():
+class CrossAttentionRetrieverTrainingArguments(RetrieverTrainingArguments):
     batch_size: int = 8
     shuffle: bool = False
     epochs: int = 1
@@ -52,7 +52,7 @@ class _CrossAttentionRetrieverDataset(Dataset):
         else:
             return self.queries[idx // 2], self.documents[(idx // 2 - 1) % len(self.documents)], torch.tensor(0, dtype=torch.float)
 
-class CrossAttentionRetriever(Retriever):
+class CrossAttentionRetriever(TrainableRetriever):
     def __init__(self, bert_checkpoint, seed=None, device=None, inference_batch_size=8):
         self.bert_checkpoint = bert_checkpoint
         self.model = CrossAttentionDistancePredictor(bert_checkpoint, seed=seed)
