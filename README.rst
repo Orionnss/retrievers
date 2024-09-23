@@ -1,3 +1,0 @@
-# Retriever Transformers
-
-Description.

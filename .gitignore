@@ -5,3 +5,6 @@ dist/
 build/
 *.png
 test_model
+.venv
+.pdm-python
+.pdm-build
